@@ -39,6 +39,24 @@ export async function getMyTransactions(page: number, pageSize: number) {
   return { items: data, total: count ?? 0 };
 }
 
+export async function getMyToolUsage(page: number, pageSize: number) {
+  const user = await requireUser();
+  const clampedSize = Math.min(pageSize, 50);
+  const from = page * clampedSize;
+  const to = from + clampedSize - 1;
+
+  const supabase = await createClient();
+  const { data, error, count } = await supabase
+    .from("tool_usage")
+    .select("*", { count: "exact" })
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return { items: data, total: count ?? 0 };
+}
+
 export async function getToolPricing(): Promise<Record<ToolName, number>> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("tool_pricing").select("tool, cost_credits");
