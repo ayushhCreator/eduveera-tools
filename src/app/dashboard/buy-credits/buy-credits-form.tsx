@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { submitUtrPayment, UPI_PAYEE } from "@/lib/payments/actions";
+import { submitUtrPayment } from "@/lib/payments/actions";
+import { UPI_PAYEE } from "@/lib/payments/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

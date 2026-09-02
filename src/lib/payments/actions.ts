@@ -4,14 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/session";
 import type { ActionResult } from "@/lib/credits/errors";
 
-// UPI payee details are not in the brief (blocker M5 — see TODO.md).
-// Placeholder, clearly marked, not to be treated as real production
-// payment information until confirmed.
-export const UPI_PAYEE = {
-  vpa: "PLACEHOLDER-CONFIRM-WITH-CLIENT@upi",
-  name: "Eduveera (placeholder — confirm before launch)",
-};
-
 const UTR_PATTERN = /^[A-Za-z0-9]{6,32}$/;
 
 export async function getCreditPacks() {
