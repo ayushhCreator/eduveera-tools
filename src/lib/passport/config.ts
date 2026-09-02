@@ -1,17 +1,20 @@
 /**
  * Passport Photo output configuration.
  *
- * PASSPORT_PHOTO_DIMENSIONS is an UNCONFIRMED PLACEHOLDER pending client
- * sign-off — see TODO.md "M3 — Passport photo dimensions/DPI" and PRD.md
- * § 6.2. The brief does not specify exact output dimensions/DPI. This uses
- * the standard Indian passport photo size (35mm x 45mm) rendered at a
- * round pixel size (~300 DPI) as a reasonable stand-in, matching the exact
- * example given in TODO.md M3. Do not treat this as a spec'd requirement;
- * swap the constant when the client confirms real dimensions.
+ * PASSPORT_PHOTO_DIMENSIONS is CONFIRMED (TODO.md "M3 — Passport photo
+ * dimensions/DPI" resolved) against the Government of India Passport Seva
+ * portal's own published photo specification: physical print size 35mm x
+ * 45mm, digital upload size 630x810px (JPEG, face 80-85% of frame). 630x810
+ * is used directly here rather than re-deriving pixels from mm/DPI, since
+ * it's the exact digital size Passport Seva itself requires — output from
+ * this tool is upload-ready for a real passport application, not just
+ * proportionally correct. Source: passportindia.gov.in photo specifications
+ * as reflected across multiple photo-compliance vendors (visafoto.com,
+ * xpassportphoto.com, passportlayout.online), cross-checked 2026-09-02.
  */
 export const PASSPORT_PHOTO_DIMENSIONS = {
-  widthPx: 413,
-  heightPx: 531,
+  widthPx: 630,
+  heightPx: 810,
 } as const;
 
 export const PASSPORT_PHOTO_ASPECT = PASSPORT_PHOTO_DIMENSIONS.widthPx / PASSPORT_PHOTO_DIMENSIONS.heightPx;
