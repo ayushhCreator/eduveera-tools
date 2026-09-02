@@ -54,9 +54,11 @@ eduveera-tools/
 ## Development Setup
 
 1. `npm install`
-2. Copy `.env.example` → `.env.local`, fill in Supabase project URL/keys (see § Environment Variables below).
-3. `supabase start` (local Supabase via Docker) or point at a shared dev project, then apply migrations: `supabase db push`.
+2. `npx supabase init` (first time only), then `npx supabase start` — spins up local Postgres/Auth/PostgREST/Studio via Docker and applies everything in `supabase/migrations/` automatically. Prints a local `API URL`, `anon key`, and `service_role key`.
+3. Copy `.env.example` → `.env.local` and fill in the three values from step 2 (or your Supabase project's URL/keys if pointing at a shared/hosted project instead).
 4. `npm run dev` — app at `http://localhost:3000`.
+
+Verify the database layer independently of the app with `npm run db:test` (`scripts/test-db/run.sh`) — spins up a throwaway `postgres:16` container, applies the migrations, and asserts the schema, RLS policies, and credit-mutation functions (including a concurrent-debit race test) all behave correctly.
 
 Full environment breakdown (dev/staging/production): [DEPLOYMENT.md](DEPLOYMENT.md).
 

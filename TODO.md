@@ -2,6 +2,14 @@
 
 Phased for an AI coding agent to execute in order. Each task lists objective, dependencies, expected output, and required tests. Cross-references: [PRD.md](PRD.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DATABASE.md](DATABASE.md), [API.md](API.md), [SECURITY.md](SECURITY.md), [AI_RULES.md](AI_RULES.md), [TESTING.md](TESTING.md), [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Status (as of this build pass)
+
+Phases 1–8, 11–17 implemented and verified — typecheck/lint/unit tests green, production build passes, DB schema+RLS+credit-functions+concurrency verified against a real Postgres instance (`scripts/test-db/run.sh`), and every user-facing flow (signup, login, logout, dashboard, image compression end-to-end with real credit debit, admin user search/detail/credit-adjust, UTR submission + duplicate rejection + admin approval, Hindi detection + honest unsupported-conversion messaging, non-admin blocked from `/admin`) manually verified in a browser against a real local Supabase instance (`supabase start`). 7 Playwright E2E specs codify the flows that don't need canvas/crop interaction and pass on both desktop and mobile viewports.
+
+**Phases 9 & 10 (Kruti Dev ↔ Unicode mapping) are genuinely blocked** on M1 (verified mapping table) and M2 (real deed samples) — not started, infrastructure is ready to receive them per Phase 8.
+
+**Not yet done:** wiring the Playwright E2E job into CI (needs a Supabase instance reachable from GitHub Actions — commented out in `.github/workflows/ci.yml` with the exact steps to uncomment once credentials exist); full interactive verification of the Passport Photo crop/zoom/reposition UI in a real browser (covered by unit tests on the pure crop math + a manual page-load/gate smoke check, not a full drag-crop-download cycle — `react-easy-crop` pointer-drag interactions don't simulate well headlessly); M3/M4/M5 business-value confirmation (placeholders are wired in and functional, just not client-approved numbers).
+
 ## Blocking missing inputs (resolve before the phases that need them)
 
 - **M1 — Kruti Dev mapping table + reordering rules.** No mapping data exists in the brief. Required before Phase 9. Get from client/domain source; do not fabricate (AI_RULES.md rule 9).

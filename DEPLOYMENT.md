@@ -28,10 +28,9 @@ Using one shared Supabase *staging* project (not one-per-PR) is the pragmatic ch
 
 1. Clone repo.
 2. `npm install`.
-3. Copy `.env.example` → `.env.local`, fill in a dev/local Supabase project's URL + anon key (+ service role key for local-only testing of admin/credit flows).
-4. `supabase start` (if using local Supabase) or point at the shared dev project.
-5. Run migrations: `supabase db push` (or `supabase migration up` against local).
-6. `npm run dev`.
+3. `supabase start` (if using local Supabase — applies everything in `supabase/migrations/` automatically on first start; `supabase db reset` re-applies from scratch if local state ever needs wiping) or point at the shared dev project and apply migrations with `supabase db push --project-ref <dev-ref>`.
+4. Copy `.env.example` → `.env.local`, fill in the URL/anon key/service role key `supabase start` printed (or the shared dev project's values).
+5. `npm run dev`.
 
 ## Staging/Preview Environment
 
