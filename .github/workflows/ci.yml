@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-typecheck-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      # Includes the Hindi golden-corpus tests once real mapping data lands
+      # (TESTING.md § 6) — currently there's no mapping data (TODO.md
+      # blocker M1), so this only runs the detect/convert plumbing tests.
+      - run: npm run test
+
+      # Dummy values: no live Supabase project in this job, and no page
+      # queries Supabase during static generation, so these only need to
+      # be *present* (non-null-assertion in the client constructors),
+      # never actually reachable.
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
+
+  db-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Verifies supabase/migrations/*.sql against a bare postgres:16
+      # container: schema, constraints, the auth.users trigger, RLS
+      # policies, and the credit-mutation functions (including a
+      # concurrent-debit race test). Does NOT cover auth.uid()-in-JWT
+      # fidelity end-to-end — that needs a real Supabase project (see
+      # DEPLOYMENT.md); scripts/test-db/00-bootstrap-local.sql stubs
+      # enough of it to test RLS policy logic directly.
+      - run: bash scripts/test-db/run.sh
+
+  # E2E requires a reachable Supabase Auth instance (local dev uses
+  # `supabase start`; this repo doesn't run the full Supabase Docker stack
+  # in CI yet — see DEPLOYMENT.md for the local/staging/production
+  # environment story). Wire this job up once CI has Supabase credentials
+  # (either a `supabase start` service step, or a dedicated CI Supabase
+  # project's URL/anon key as repo secrets); until then it's here as the
+  # documented next step, not run automatically. Verified manually against
+  # a local `supabase start` instance before this commit — see TESTING.md.
+  # e2e:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with: { node-version: 20, cache: npm }
+  #     - run: npm ci
+  #     - run: npx playwright install --with-deps chromium
+  #     - run: npm run test:e2e
+  #       env:
+  #         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CI_SUPABASE_URL }}
+  #         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.CI_SUPABASE_ANON_KEY }}
+  #         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CI_SUPABASE_SERVICE_ROLE_KEY }}
