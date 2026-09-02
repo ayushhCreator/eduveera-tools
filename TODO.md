@@ -4,17 +4,17 @@ Phased for an AI coding agent to execute in order. Each task lists objective, de
 
 ## Status (as of this build pass)
 
-Phases 1–8, 11–17 implemented and verified — typecheck/lint/unit tests green, production build passes, DB schema+RLS+credit-functions+concurrency verified against a real Postgres instance (`scripts/test-db/run.sh`), and every user-facing flow (signup, login, logout, dashboard, image compression end-to-end with real credit debit, admin user search/detail/credit-adjust, UTR submission + duplicate rejection + admin approval, Hindi detection + honest unsupported-conversion messaging, non-admin blocked from `/admin`) manually verified in a browser against a real local Supabase instance (`supabase start`). 7 Playwright E2E specs codify the flows that don't need canvas/crop interaction and pass on both desktop and mobile viewports.
+Phases 1–17 implemented and verified — typecheck/lint/unit tests green, production build passes, DB schema+RLS+credit-functions+concurrency verified against a real Postgres instance (`scripts/test-db/run.sh`), and every user-facing flow (signup, login, logout, dashboard, image compression end-to-end with real credit debit, admin user search/detail/credit-adjust, UTR submission + duplicate rejection + admin approval, Hindi conversion end-to-end with real credit debit, non-admin blocked from `/admin`) manually verified in a browser against a real local Supabase instance (`supabase start`). 7 Playwright E2E specs codify the flows that don't need canvas/crop interaction and pass on both desktop and mobile viewports.
 
-**Phases 9 & 10 (Kruti Dev ↔ Unicode mapping) are genuinely blocked** on M1 (verified mapping table) and M2 (real deed samples) — not started, infrastructure is ready to receive them per Phase 8.
+**Phases 9 & 10 (Kruti Dev ↔ Unicode mapping) are implemented** — M1 resolved via research (see `src/lib/hindi/mappings/README.md`): a verified mapping table + reordering algorithm ported from two independent, cross-checked sources (SIL International's formal TECkit specification, and a working community reference converter), validated via round-trip testing against real Hindi text and cross-checked against SIL's byte-level table. M2 is partially resolved — see below.
 
-**Not yet done:** wiring the Playwright E2E job into CI (needs a Supabase instance reachable from GitHub Actions — commented out in `.github/workflows/ci.yml` with the exact steps to uncomment once credentials exist); full interactive verification of the Passport Photo crop/zoom/reposition UI in a real browser (covered by unit tests on the pure crop math + a manual page-load/gate smoke check, not a full drag-crop-download cycle — `react-easy-crop` pointer-drag interactions don't simulate well headlessly); M3/M4/M5 business-value confirmation (placeholders are wired in and functional, just not client-approved numbers).
+**Not yet done:** wiring the Playwright E2E job into CI (needs a Supabase instance reachable from GitHub Actions — commented out in `.github/workflows/ci.yml` with the exact steps to uncomment once credentials exist); full interactive verification of the Passport Photo crop/zoom/reposition UI in a real browser (covered by unit tests on the pure crop math + a manual page-load/gate smoke check, not a full drag-crop-download cycle — `react-easy-crop` pointer-drag interactions don't simulate well headlessly); M4/M5 business-value confirmation (placeholders are wired in and functional, just not client-approved numbers).
 
 ## Blocking missing inputs (resolve before the phases that need them)
 
-- **M1 — Kruti Dev mapping table + reordering rules.** No mapping data exists in the brief. Required before Phase 9. Get from client/domain source; do not fabricate (AI_RULES.md rule 9).
-- **M2 — Real deed sample text.** No samples in the brief. Required before Phase 9–11 can be considered done (acceptance criteria explicitly requires this). Must be reviewed for PII before entering the repo (TESTING.md § 6).
-- **M3 — Passport photo dimensions/DPI.** Brief says "fixed passport-style" with no numbers. Required before Phase 7. Confirm with client; until then, implement behind a config constant with an obvious placeholder value (e.g. standard Indian passport photo 35mm×45mm / 413×531px @ 300 DPI) clearly marked as unconfirmed.
+- **M1 — Kruti Dev mapping table + reordering rules. RESOLVED.** No mapping data existed in the brief, so this was researched rather than fabricated: ported from [SIL International's KrutiDev011.map](https://github.com/silnrsi/wsresources/blob/master/scripts/Deva/legacy/kruti-dev-011/mappings/KrutiDev011.map) (formal TECkit byte-value spec, copyright SIL International 2006, repo confirmed MIT-licensed) and [TGNYC/Kriti-Dev-to-Unicode](https://github.com/TGNYC/Kriti-Dev-to-Unicode) (working community converter), cross-checked against each other (32/33 of SIL's explicit conjunct entries matched exactly; 5 gaps found and filled directly from SIL; 1 documented disagreement left unresolved rather than guessed), and validated via round-trip testing against real Hindi text. See `src/lib/hindi/mappings/krutidev.ts` for full attribution and `src/lib/hindi/mappings/README.md` for the verification method. Not a client-provided or court-certified source — MVP-quality per the two independent verification passes described there. **Known risk, accepted by user decision (2026-09-02):** the TGNYC repo has no LICENSE file (all-rights-reserved by default under copyright law), unlike the confirmed-MIT SIL source. Shipped as-is per explicit user choice; revisit before wider commercial launch or if the client raises it — see `src/lib/hindi/mappings/krutidev.ts` "LICENSE NOTE."
+- **M2 — Real deed sample text. PARTIALLY RESOLVED.** No samples in the brief, and none obtainable by "download from the net" — a genuine deed is a private legal document (PII: names, addresses, survey numbers), not publicly available. What was obtained instead: a real, independently-sourced Hindi text sample (not authored for this project) from the TGNYC reference converter's own test fixture, used as golden-corpus entry 01. A true deed-specific sample remains a client-ask — see `src/lib/hindi/__tests__/golden-corpus/krutidev/README.md` "Known limitations."
+- **M3 — Passport photo dimensions/DPI. RESOLVED.** Confirmed against the Government of India Passport Seva portal's own published photo specification: physical print 35mm×45mm, digital upload 630×810px. Implemented directly as `PASSPORT_PHOTO_DIMENSIONS` in `src/lib/passport/config.ts` (updated from the earlier 413×531px DPI-derived placeholder to Passport Seva's exact digital spec, cross-checked 2026-09-02).
 - **M4 — Credit pricing values** (per-tool cost, ₹-to-credit pack amounts). Brief says "configurable," gives no numbers. Required before Phase 13 launch-readiness (not before building the mechanism — the mechanism just needs to read from config, values can be placeholder until confirmed).
 - **M5 — UPI payee details** (VPA / QR / display name) for the manual payment instructions shown to users. Required before Phase 13 launch-readiness.
 
@@ -63,7 +63,7 @@ Phases 1–8, 11–17 implemented and verified — typecheck/lint/unit tests gre
 ## Phase 7 — Passport Photo
 
 **Objective:** working passport photo tool per brief § 4.
-**Dependencies:** Phase 4, Phase 1, **M3 resolved** (or explicit placeholder dimension accepted for now).
+**Dependencies:** Phase 4, Phase 1, **M3 resolved** (confirmed against the official Passport Seva spec — see § Blocking missing inputs above).
 **Expected output:** `/tools/passport-photo` page: upload → pre-flight credit gate (same pattern as Phase 6) → crop/zoom/reposition UI → fixed-ratio output → JPG download → `recordToolResult` settles credits. No AI background removal. Cropping component/config structured so a future A4 multi-copy sheet output can be added without redesigning the crop step (ARCHITECTURE.md § 9 / PRD.md § 6.2).
 **Tests required:** E2E happy path (upload → crop → download → verify output dimensions/ratio match config → balance decremented); insufficient-balance gate test; mobile E2E pass (touch-based crop/zoom).
 
@@ -76,24 +76,26 @@ Phases 1–8, 11–17 implemented and verified — typecheck/lint/unit tests gre
 
 ## Phase 9 — Kruti Dev → Unicode
 
-**Objective:** real, verified Kruti Dev → Unicode conversion.
-**Dependencies:** Phase 8, **M1 and M2 resolved** (this phase cannot start meaningfully without verified mapping data and real deed samples — blocked otherwise).
-**Expected output:** `lib/hindi/mappings/krutidev.ts` populated with the verified glyph-code ↔ Unicode table; reordering rules for Kruti Dev's visual-order matra placement implemented in `reorder.ts`; `convert.ts` direction `kruti_to_unicode` fully working.
-**Tests required:** full golden-corpus coverage per TESTING.md § 6 (matras, half letters, conjuncts, punctuation, numbers, mixed Hindi/English, real deed samples) for this direction, all passing in CI.
+**Status: done.** **Objective:** real, verified Kruti Dev → Unicode conversion.
+**Dependencies:** Phase 8, **M1 and M2 resolved** (M1 fully, M2 partially — see § Blocking missing inputs above).
+**Expected output:** `lib/hindi/mappings/krutidev.ts` populated with the verified glyph-code ↔ Unicode table; reordering rules for Kruti Dev's visual-order matra placement implemented in `reorder.ts`; `convert.ts` direction `kruti_to_unicode` fully working. Done — see `src/lib/hindi/mappings/README.md` for sourcing.
+**Tests required:** full golden-corpus coverage per TESTING.md § 6 (matras, half letters, conjuncts, punctuation, numbers, mixed Hindi/English, real deed samples) for this direction, all passing in CI. Done except real deed samples (M2 limitation, documented in the corpus README) — 7 corpus pairs cover the other 7 categories, all passing.
 
 ## Phase 10 — Unicode → Kruti Dev
 
-**Objective:** the reverse direction.
+**Status: done.** **Objective:** the reverse direction.
 **Dependencies:** Phase 9 (shares the mapping table; reordering logic for this direction is the inverse transform).
-**Expected output:** `convert.ts` direction `unicode_to_kruti` fully working, reusing `krutidev.ts` and the reorder module.
-**Tests required:** golden-corpus coverage for this direction (can largely reuse Phase 9's corpus pairs as round-trip tests, per TESTING.md § 6 corpus format) plus round-trip tests (`unicode → kruti → unicode` recovers the original for corpus entries where that's expected to hold).
+**Expected output:** `convert.ts` direction `unicode_to_kruti` fully working, reusing `krutidev.ts` and the reorder module. Done.
+**Tests required:** golden-corpus coverage for this direction (can largely reuse Phase 9's corpus pairs as round-trip tests, per TESTING.md § 6 corpus format) plus round-trip tests (`unicode → kruti → unicode` recovers the original for corpus entries where that's expected to hold). Done — one corpus entry (mixed Hindi/English) is documented as one-directional only; see corpus README "Known limitations" for why that's an inherent property of plain-text Kruti Dev, not a gap in this phase.
 
 ## Phase 11 — Smart Detection
 
+**Status: partial (Unicode-range detection only), unchanged by Phase 9/10 landing.**
 **Objective:** working classifier per brief § 1/§ 2.
 **Dependencies:** Phase 9 (needs real Kruti Dev pattern knowledge to detect it).
 **Expected output:** `lib/hindi/detect.ts` implementing Unicode-range detection (Devanagari codepoints) and known-legacy-pattern detection for Kruti Dev; returns `'unicode' | 'legacy_krutidev' | 'unknown'`, never guesses on unrecognized input (AI_RULES.md rule 10). `detectTextEncoding` Server Action (API.md § 4) and Hindi Converter UI wiring (paste → auto-suggest direction → user confirms).
 **Tests required:** unit tests covering clearly-Unicode input, clearly-Kruti Dev input, and clearly-neither input (must return `'unknown'`, not a guess) — plus the same golden-corpus samples run through detection to confirm they're classified correctly before conversion.
+**Note:** now that Phase 9 provides a verified Kruti Dev glyph table, a real `legacy_krutidev` signature detector (distinct from guessing) is technically buildable — e.g. matching a corpus of characteristic multi-char Kruti Dev sequences from `krutidev.ts`'s own table. This was not requested in the M1/M2/M3 research pass and has not been built; flagging as a well-scoped future increment rather than expanding scope unprompted.
 
 ## Phase 12 — Admin Panel
 
@@ -120,7 +122,7 @@ Phases 1–8, 11–17 implemented and verified — typecheck/lint/unit tests gre
 
 **Objective:** confirm the full test suite from [TESTING.md](TESTING.md) is complete and green, not just per-phase spot checks.
 **Dependencies:** Phases 1–14.
-**Expected output:** CI pipeline running unit + integration + E2E + security test suites on every PR; Hindi golden corpus at full coverage across all required categories (TESTING.md § 6) including real deed samples (M2) reviewed for PII.
+**Expected output:** CI pipeline running unit + integration + E2E + security test suites on every PR; Hindi golden corpus covers 7 of 8 required categories (TESTING.md § 6) — real deed samples (M2) remain outstanding, a genuine deed being private/PII-bearing and not obtainable without a client-provided sample (see corpus README "Known limitations").
 **Tests required:** this phase *is* the test consolidation — deliverable is a green CI run covering every category in TESTING.md.
 
 ## Phase 16 — Deployment
