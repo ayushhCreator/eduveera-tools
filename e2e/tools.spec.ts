@@ -26,13 +26,24 @@ for (const path of ["/tools/image-compressor", "/tools/passport-photo"]) {
   });
 }
 
-test("hindi converter never shows a fabricated result for unsupported input", async ({ page }) => {
+// The Hindi Converter has no client-side pre-flight gate (ARCHITECTURE.md §
+// 8: it settles credits server-side in the same call that computes the
+// result, unlike the client-reported-success pattern the other two tools
+// use), so a zero-balance user only finds out via the server's
+// INSUFFICIENT_CREDITS error after clicking Convert, not a static banner.
+// This also exercises the real mapping module (Phase 9/10, TODO.md M1):
+// the input is valid Kruti Dev text and conversion would succeed if the
+// user had a balance, so this test is really checking the credit gate, not
+// mapping correctness (see src/lib/hindi/__tests__/golden-corpus/ for that).
+test("hindi converter blocks conversion for a zero-balance user via the credit gate, not a fabricated result", async ({
+  page,
+}) => {
   await signUp(page);
   await page.goto("/tools/hindi-converter");
 
-  await page.locator("textarea").first().fill("यह हिंदी में एक वाक्य है।");
+  await page.locator("textarea").first().fill("dqN Hkh");
   await page.click('button:has-text("Convert")');
 
-  await expect(page.getByText(/unsupported|under construction|not available/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/insufficient_credits|insufficient_balance/i)).toBeVisible({ timeout: 10_000 });
   await expect(page.locator("textarea").nth(1)).toHaveValue("");
 });
