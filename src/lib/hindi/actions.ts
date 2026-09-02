@@ -5,9 +5,12 @@ import { settleToolUsage } from "@/lib/credits/actions";
 import type { ActionResult } from "@/lib/credits/errors";
 import { detectEncoding, type DetectionResult } from "@/lib/hindi/detect";
 import { convertText, type ConvertDirection } from "@/lib/hindi/convert";
+import { rateLimited } from "@/lib/security/rate-limit";
 
 // API.md § 4: "text: string (max length enforced, e.g. 20,000 chars)".
 const MAX_TEXT_LENGTH = 20_000;
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
 
 /**
  * Smart Detection (PRD.md § 6.4) — free, never settles credits. Requires
@@ -17,6 +20,10 @@ const MAX_TEXT_LENGTH = 20_000;
 export async function detectTextEncoding(text: string): Promise<ActionResult<{ result: DetectionResult }>> {
   const user = await getCurrentUser();
   if (!user) return { success: false, code: "UNAUTHENTICATED", message: "not signed in" };
+
+  if (rateLimited(`detect:${user.id}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+    return { success: false, code: "VALIDATION", message: "rate_limited" };
+  }
 
   if (text.trim().length === 0) {
     return { success: false, code: "VALIDATION", message: "text must not be empty" };
@@ -47,6 +54,10 @@ export async function convertHindiText(
 ): Promise<ActionResult<{ convertedText: string; newBalance: number; creditsCharged: number }>> {
   const user = await getCurrentUser();
   if (!user) return { success: false, code: "UNAUTHENTICATED", message: "not signed in" };
+
+  if (rateLimited(`convert:${user.id}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+    return { success: false, code: "VALIDATION", message: "rate_limited" };
+  }
 
   if (text.trim().length === 0) {
     return { success: false, code: "VALIDATION", message: "text must not be empty" };

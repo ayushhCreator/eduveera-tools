@@ -3,8 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/session";
 import type { ActionResult } from "@/lib/credits/errors";
+import { rateLimited } from "@/lib/security/rate-limit";
 
 const UTR_PATTERN = /^[A-Za-z0-9]{6,32}$/;
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function getCreditPacks() {
   const supabase = await createClient();
@@ -41,6 +44,11 @@ export async function submitUtrPayment(
   utr: string,
 ): Promise<ActionResult<{ paymentId: string }>> {
   const user = await requireUser();
+
+  if (rateLimited(`submit-utr:${user.id}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+    return { success: false, code: "VALIDATION", message: "rate_limited" };
+  }
+
   const trimmedUtr = utr.trim();
 
   if (!UTR_PATTERN.test(trimmedUtr)) {
