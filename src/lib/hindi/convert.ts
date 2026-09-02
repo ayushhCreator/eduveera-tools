@@ -1,20 +1,23 @@
 /**
  * Conversion orchestrator: given (text, direction), looks up a mapping
- * module for the relevant font and runs mapping + reordering. See
- * ARCHITECTURE.md § 8.
+ * module for the relevant font and delegates the actual transformation to
+ * it. See ARCHITECTURE.md § 8.
  *
  * Design rule (AI_RULES.md rule 11): this file contains *no* mapping data
  * and *no* reordering rules — only routing/orchestration. Adding a new
  * legacy font is "register a module in MAPPING_REGISTRY", never "edit the
- * logic in this file."
+ * logic in this file." A `MappingModule` owns its full text transform
+ * (rather than exposing separate char-table + generic-reorder pieces for
+ * this file to combine) because Kruti Dev's real algorithm interleaves
+ * substitution and position-fixing in a direction-dependent order — a
+ * generic "map then reorder" pipeline can't express that without silently
+ * corrupting multi-character glyph sequences. See mappings/krutidev.ts.
  *
- * No mapping module is registered yet (blocked on M1, see TODO.md and
- * mappings/README.md), so every call currently falls through to the
- * `ok: false` branch below. That is correct behavior, not a bug — never
- * fabricate output when no verified mapping exists (AI_RULES.md rule 9).
+ * Kruti Dev is registered below (Phase 9/10, TODO.md M1 resolved via
+ * research — see mappings/krutidev.ts for source attribution).
  */
 
-import type { ReorderRules } from "./reorder";
+import { krutidevMapping } from "./mappings/krutidev";
 
 export type ConvertDirection = "kruti_to_unicode" | "unicode_to_kruti";
 
@@ -22,22 +25,21 @@ export type ConvertResult =
   | { ok: true; text: string }
   | { ok: false; reason: "no_mapping_available"; fontId: string };
 
-/** Character-mapping data + reordering rules for one legacy font. */
+/** One legacy font's full text-conversion behavior. */
 export interface MappingModule {
   fontId: string;
-  /** glyph code (as typed in the legacy font) -> Unicode codepoint(s) */
-  legacyToUnicode: Record<string, string>;
-  /** Unicode codepoint(s) -> glyph code (as typed in the legacy font) */
-  unicodeToLegacy: Record<string, string>;
-  reorderRules: ReorderRules;
+  convert(text: string, direction: ConvertDirection): string;
 }
 
 /**
- * Registry of verified mapping modules, keyed by font id. Empty until a
- * real module (e.g. "krutidev") is added under mappings/ and registered
- * here — see mappings/README.md for the checklist.
+ * Registry of verified mapping modules, keyed by font id. Add a new font by
+ * building `mappings/<font-id>.ts` and registering it here — see
+ * mappings/README.md for the full checklist (data + fixups + corpus
+ * coverage all required before a module counts as usable).
  */
-const MAPPING_REGISTRY: Record<string, MappingModule> = {};
+const MAPPING_REGISTRY: Record<string, MappingModule> = {
+  krutidev: krutidevMapping,
+};
 
 /**
  * The only font this MVP targets is Kruti Dev (PRD.md § 6.3), so both
@@ -53,16 +55,5 @@ export function convertText(text: string, direction: ConvertDirection): ConvertR
     return { ok: false, reason: "no_mapping_available", fontId: TARGET_FONT_ID };
   }
 
-  // Unreachable until a mapping module is registered above — kept here so
-  // wiring in a real font is additive (register module -> this branch
-  // activates), not a rewrite of the orchestrator or its callers.
-  const table = direction === "kruti_to_unicode" ? mapping.legacyToUnicode : mapping.unicodeToLegacy;
-  const reorderDirection = direction === "kruti_to_unicode" ? "visual_to_logical" : "logical_to_unicode_logical";
-
-  const mapped = Array.from(text)
-    .map((ch) => table[ch] ?? ch)
-    .join("");
-  const result = mapping.reorderRules.reorder(mapped, reorderDirection);
-
-  return { ok: true, text: result };
+  return { ok: true, text: mapping.convert(text, direction) };
 }
