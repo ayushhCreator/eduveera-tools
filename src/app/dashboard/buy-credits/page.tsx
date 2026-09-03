@@ -10,11 +10,11 @@ export default async function BuyCreditsPage() {
   const [packs, payments] = await Promise.all([getCreditPacks(), getMyPayments(0, 10)]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-2xl space-y-8 p-4 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-semibold">Buy credits / क्रेडिट खरीदें</h1>
-        <Button asChild variant="outline">
-          <Link href="/dashboard">Back to dashboard</Link>
+        <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Link href="/dashboard">Back to dashboard / डैशबोर्ड पर वापस</Link>
         </Button>
       </div>
 

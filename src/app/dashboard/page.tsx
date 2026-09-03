@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth/session";
-import { signOut } from "@/lib/auth/actions";
 import { getCreditBalance, getMyTransactions, getMyToolUsage } from "@/lib/credits/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,7 +28,6 @@ const TOOLS = [
 ];
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
   const [balanceResult, transactions, toolUsage] = await Promise.all([
     getCreditBalance(),
     getMyTransactions(0, 10),
@@ -40,26 +37,19 @@ export default async function DashboardPage() {
   const balance = balanceResult.success ? balanceResult.balance : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">Dashboard / डैशबोर्ड</h1>
-          <p className="text-sm text-muted-foreground">Signed in as {user?.email}</p>
-        </div>
-        <form action={signOut}>
-          <Button type="submit" variant="outline">
-            Log out
-          </Button>
-        </form>
+    <div className="mx-auto max-w-4xl space-y-8 p-4 sm:p-6">
+      <div>
+        <h1 className="text-xl font-semibold">Dashboard / डैशबोर्ड</h1>
+        <p className="text-sm text-muted-foreground">Your credits, tools, and activity / आपके क्रेडिट, टूल्स और गतिविधि</p>
       </div>
 
       <Card>
-        <CardContent className="flex items-center justify-between pt-6">
+        <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Credit balance / क्रेडिट बैलेंस</p>
             <p className="text-3xl font-bold">{balance ?? "—"}</p>
           </div>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/dashboard/buy-credits">Buy credits / क्रेडिट खरीदें</Link>
           </Button>
         </CardContent>

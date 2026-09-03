@@ -14,6 +14,16 @@ export async function getCurrentUser() {
   return user;
 }
 
+/** Non-throwing admin check for UI (nav, conditional links). Authorization
+ * still goes through requireAdmin() in every admin action — see SECURITY.md § 2. */
+export async function isCurrentUserAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  const supabase = await createClient();
+  const { data } = await supabase.from("admin_users").select("user_id").eq("user_id", user.id).maybeSingle();
+  return !!data;
+}
+
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) {
