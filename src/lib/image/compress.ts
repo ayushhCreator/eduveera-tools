@@ -37,31 +37,61 @@ export type SearchOutcome =
   | { ok: true; result: EncodeResult; attempt: EncodeAttempt; attempts: number }
   | { ok: false; attempts: number };
 
-const QUALITY_STEPS = [0.92, 0.8, 0.68, 0.56, 0.44, 0.32, 0.2, 0.1];
-const SCALE_STEPS = [1, 0.75, 0.5, 0.35, 0.25];
+// Highest quality we ever ask for, and the lowest we'll accept before
+// preferring to shrink dimensions instead — below ~0.35 JPEG gets visibly
+// blocky, and for documents a full-size 0.4 scan beats a half-size 0.9 one.
+const MAX_QUALITY = 0.95;
+const MIN_QUALITY = 0.4;
+const QUALITY_BISECT_ITERS = 6; // ~0.01 quality resolution
+const SCALE_STEPS = [1, 0.85, 0.7, 0.55, 0.4, 0.3, 0.22];
 
 /**
- * Iteratively re-encodes via the injected `encode` function, first walking
- * quality down at full scale, then — if quality alone can't reach the
- * target — downscaling dimensions too. Stops at the first attempt that
- * meets the target; reports failure after exhausting the grid rather than
- * looping forever (no output is better than a silent wrong one).
+ * Finds the **highest-quality** encoding that still fits under `targetKB`,
+ * keeping full resolution for as long as possible:
  *
- * `encode` is injected so this search is testable with a fake encoder;
- * the real encoder (canvas.toBlob-based) lives in the client component.
+ *  - at each scale, if MAX_QUALITY already fits, take it (can't do better);
+ *  - else if MIN_QUALITY still doesn't fit, this scale is hopeless — shrink;
+ *  - else binary-search quality for the best that fits at this scale.
+ *
+ * So a source that's already small keeps near-original quality, and we only
+ * downscale once even MIN_QUALITY at the current scale overshoots. Reports
+ * failure after exhausting the scale ladder rather than returning a wrong
+ * result. `encode` is injected so this stays unit-testable without Canvas.
  */
 export async function findCompressionTarget(targetKB: number, encode: Encoder): Promise<SearchOutcome> {
   let attempts = 0;
 
   for (const scale of SCALE_STEPS) {
-    for (const quality of QUALITY_STEPS) {
+    attempts += 1;
+    const top = await encode({ quality: MAX_QUALITY, scale });
+    if (top.sizeKB <= targetKB) {
+      return { ok: true, result: top, attempt: { quality: MAX_QUALITY, scale }, attempts };
+    }
+
+    attempts += 1;
+    const bottom = await encode({ quality: MIN_QUALITY, scale });
+    if (bottom.sizeKB > targetKB) {
+      continue; // even the lowest acceptable quality overshoots — go smaller
+    }
+
+    let best: { result: EncodeResult; attempt: EncodeAttempt } = {
+      result: bottom,
+      attempt: { quality: MIN_QUALITY, scale },
+    };
+    let lo = MIN_QUALITY;
+    let hi = MAX_QUALITY;
+    for (let i = 0; i < QUALITY_BISECT_ITERS; i += 1) {
+      const quality = (lo + hi) / 2;
       attempts += 1;
-      const attempt: EncodeAttempt = { quality, scale };
-      const result = await encode(attempt);
+      const result = await encode({ quality, scale });
       if (result.sizeKB <= targetKB) {
-        return { ok: true, result, attempt, attempts };
+        best = { result, attempt: { quality, scale } };
+        lo = quality;
+      } else {
+        hi = quality;
       }
     }
+    return { ok: true, result: best.result, attempt: best.attempt, attempts };
   }
 
   return { ok: false, attempts };

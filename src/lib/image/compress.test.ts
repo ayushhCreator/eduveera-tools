@@ -21,7 +21,7 @@ describe("pickPresetTargetKB", () => {
 });
 
 describe("findCompressionTarget", () => {
-  it("returns the first attempt that meets the target", async () => {
+  it("returns an attempt that meets the target", async () => {
     const encode: Encoder = async ({ quality, scale }) => ({
       sizeKB: quality * scale * 200,
       blob: new Blob(),
@@ -33,6 +33,32 @@ describe("findCompressionTarget", () => {
     if (outcome.ok) {
       expect(outcome.result.sizeKB).toBeLessThanOrEqual(100);
       expect(outcome.attempts).toBeGreaterThan(0);
+    }
+  });
+
+  it("maximizes quality — lands near the target, not far under it", async () => {
+    // sizeKB = quality * 120 at full scale; target 60 => ideal quality ~0.5.
+    const encode: Encoder = async ({ quality, scale }) => ({ sizeKB: quality * scale * 120, blob: new Blob() });
+
+    const outcome = await findCompressionTarget(60, encode);
+
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.result.sizeKB).toBeLessThanOrEqual(60);
+      expect(outcome.result.sizeKB).toBeGreaterThan(54); // within ~10% — not a coarse lowball
+      expect(outcome.attempt.scale).toBe(1); // full resolution kept
+    }
+  });
+
+  it("keeps original resolution and top quality when the source already fits", async () => {
+    const encode: Encoder = async ({ quality, scale }) => ({ sizeKB: quality * scale * 50, blob: new Blob() });
+
+    const outcome = await findCompressionTarget(100, encode);
+
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(outcome.attempt.scale).toBe(1);
+      expect(outcome.attempt.quality).toBeGreaterThanOrEqual(0.9);
     }
   });
 

@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // 15 MB, SECURITY.md § 10
@@ -33,9 +32,13 @@ export default function ImageCompressorPage() {
   const [customKB, setCustomKB] = useState("");
   const [status, setStatus] = useState<"idle" | "compressing" | "done" | "failed">("idle");
   const [originalKB, setOriginalKB] = useState<number | null>(null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [finalKB, setFinalKB] = useState<number | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [quality, setQuality] = useState<number | null>(null);
+  const [scale, setScale] = useState<number | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const originalUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +63,7 @@ export default function ImageCompressorPage() {
   useEffect(() => {
     return () => {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+      if (originalUrlRef.current) URL.revokeObjectURL(originalUrlRef.current);
     };
   }, []);
 
@@ -70,11 +74,18 @@ export default function ImageCompressorPage() {
     }
     setDownloadUrl(null);
     setFinalKB(null);
+    setQuality(null);
+    setScale(null);
     setStatus("idle");
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     resetResult();
+    if (originalUrlRef.current) {
+      URL.revokeObjectURL(originalUrlRef.current);
+      originalUrlRef.current = null;
+    }
+    setOriginalUrl(null);
     const selected = e.target.files?.[0] ?? null;
     if (!selected) {
       setFile(null);
@@ -93,6 +104,9 @@ export default function ImageCompressorPage() {
     }
     setFile(selected);
     setOriginalKB(selected.size / 1024);
+    const url = URL.createObjectURL(selected);
+    originalUrlRef.current = url;
+    setOriginalUrl(url);
   }
 
   const customKBNumber = Number(customKB);
@@ -112,8 +126,8 @@ export default function ImageCompressorPage() {
       return;
     }
 
-    setStatus("compressing");
     resetResult();
+    setStatus("compressing");
 
     try {
       const img = await loadImageBitmap(file);
@@ -147,6 +161,8 @@ export default function ImageCompressorPage() {
       objectUrlRef.current = url;
       setDownloadUrl(url);
       setFinalKB(outcome.result.sizeKB);
+      setQuality(outcome.attempt.quality);
+      setScale(outcome.attempt.scale);
       setGate({ loading: false, balance: settled.newBalance, cost: gate.cost });
       setStatus("done");
       toast.success(`Compressed to ${Math.round(outcome.result.sizeKB)} KB. ${settled.creditsCharged} credit charged.`);
@@ -268,18 +284,44 @@ export default function ImageCompressorPage() {
         {status === "compressing" ? "Compressing… / कंप्रेस हो रहा है…" : "Compress / कंप्रेस करें"}
       </Button>
 
-      {status === "compressing" && <Progress value={undefined} className="mt-3 animate-pulse" />}
+      {status === "compressing" && (
+        <div className="mt-3 space-y-2">
+          <Progress value={undefined} className="animate-pulse" />
+          <p className="text-center text-sm text-muted-foreground">
+            Compressing in your browser — finding the highest quality that fits your target…
+            <br />
+            <span className="text-xs">ब्राउज़र में कंप्रेस हो रहा है…</span>
+          </p>
+        </div>
+      )}
 
-      {status === "done" && downloadUrl && finalKB !== null && (
+      {status === "done" && downloadUrl && originalUrl && finalKB !== null && originalKB !== null && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Done / पूरा हुआ</CardTitle>
+            <CardDescription>
+              {Math.round((1 - finalKB / originalKB) * 100)}% smaller
+              {quality !== null && scale !== null && (
+                <> · quality {Math.round(quality * 100)}%{scale < 1 ? ` · resized to ${Math.round(scale * 100)}%` : " · full resolution"}</>
+              )}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span>Original: {Math.round(originalKB ?? 0)} KB</span>
-              <Separator orientation="vertical" className="h-4" />
-              <span>Final: {Math.round(finalKB)} KB</span>
+            <div className="grid grid-cols-2 gap-4">
+              <figure className="space-y-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={originalUrl} alt="Before compression" className="aspect-square w-full rounded-md border object-contain bg-muted" />
+                <figcaption className="text-center text-xs text-muted-foreground">
+                  Before / पहले — {Math.round(originalKB)} KB
+                </figcaption>
+              </figure>
+              <figure className="space-y-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={downloadUrl} alt="After compression" className="aspect-square w-full rounded-md border object-contain bg-muted" />
+                <figcaption className="text-center text-xs text-muted-foreground">
+                  After / बाद में — {Math.round(finalKB)} KB
+                </figcaption>
+              </figure>
             </div>
             <Button asChild className="h-12 w-full text-base">
               <a href={downloadUrl} download={`compressed-${file?.name ?? "image"}.jpg`}>
