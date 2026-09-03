@@ -84,6 +84,7 @@ GitHub → Vercel (build/hosting, auto preview per PR) → Supabase (Postgres + 
 
 | Doc | Contents |
 |---|---|
+| [STATUS.md](STATUS.md) | **Start here if picking this project up cold.** What's done, what's left, known accepted risks. |
 | [PRD.md](PRD.md) | Product requirements, user journeys, acceptance criteria — the product source of truth. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System design: frontend, backend, DB, auth, credits, payments, Hindi conversion, file processing, deployment. |
 | [DATABASE.md](DATABASE.md) | Full Postgres schema, constraints, indexes, transaction rules. |
