@@ -32,6 +32,27 @@ README for what was substituted and why). Treat this mapping as
 MVP-quality — verified against two independent sources and real text, not
 court-certified or client-approved.
 
+### Re-research pass (2026-09-03) — no better-licensed source found
+
+Prompted by a request to re-check the mapping against other public
+converters. Sources evaluated and rejected as replacements for the SIL +
+TGNYC sourcing above:
+
+| Source | Licence | Verdict |
+|---|---|---|
+| `rajbhasha.net/unicode-krutidev-converter` | "© 2026 Rajbhasha.net. All rights reserved." Private site — **not** the Government of India (real dept is `rajbhasha.gov.in`, which has **no** converter). Mapping in un-shown external JS. | No licence improvement over TGNYC; misleading name. |
+| `krutidevunicodeconverter.com` | "All Rights Reserved 2026." Private, mapping not exposed. | Same — all-rights-reserved, no gain. |
+| [`ltrc/kru2uni`](https://github.com/ltrc/kru2uni) (LTRC / IIIT-Hyderabad, Python) | **GPL-3.0** | A *real* licence, but strong copyleft — porting its table into this proprietary client app is a worse obligation than TGNYC's "no licence." Not used, not read in detail. |
+| [`anthro-ai/krutidev-unicode`](https://github.com/anthro-ai/krutidev-unicode) | none shown; self-describes as a JS port of `ltrc/kru2uni` | Unlicensed **and** GPL-derived. Rejected. |
+
+Conclusion: **SIL's KrutiDev011.map (MIT, formal spec) stays the best
+authoritative + safely-licensed reference.** TGNYC stays the accepted,
+documented risk (TODO.md M1). No mapping data was changed in this pass. The
+byte-211 disagreement (below / see `krutidev.ts` header) remains open and
+deliberately un-guessed — no new real-text evidence surfaced. The converter
+was additionally validated by round-tripping a full real Hindi fable
+(golden-corpus entry 09) with exact bidirectional match.
+
 ## Adding a new font mapping
 
 1. Add `mappings/<font-id>.ts` exporting the ordered glyph ↔ Unicode
