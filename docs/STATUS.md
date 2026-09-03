@@ -56,7 +56,7 @@ Ranked by what actually blocks something vs. what's just not done yet:
 - **One documented mapping disagreement.** Byte 211 (a rare "half-ya" glyph) — SIL's spec and the TGNYC port disagree on character order; left as TGNYC's value rather than guessed, documented in `krutidev.ts`. A 2026-09-03 re-research pass against other public converters (rajbhasha.net, krutidevunicodeconverter.com, `ltrc/kru2uni`) found no better-licensed authoritative source and no new evidence on byte 211 — see [src/lib/hindi/mappings/README.md](../src/lib/hindi/mappings/README.md) "Re-research pass".
 - **Mixed Hindi/English is inherently one-directional.** `unicode_to_kruti` on mixed text works; the reverse can't distinguish literal English from Kruti Dev codes that look like English (no font-run metadata in plain text). Not a bug — see the golden-corpus README "Known limitations."
 
-## Session 2026-09-03 (in the working tree, not yet committed)
+## Session 2026-09-03 (committed + pushed to `origin/master`)
 
 - **Hosted Supabase project live.** `.env.local` points at project `gkwzckpajngcdhoivouy`
   (new-format publishable + secret keys). All 5 migrations pushed (`supabase db push`,
@@ -73,14 +73,21 @@ Ranked by what actually blocks something vs. what's just not done yet:
 - **Responsive pass.** Normalised page padding to `p-4 sm:p-6` (dashboard, buy-credits,
   passport-photo, admin layout); dashboard + buy-credits headers stack on phone;
   dropped the dashboard's own logout/"signed in as" (the nav carries both).
-- **Smart Detection — legacy Kruti Dev branch** implemented in `detect.ts` /
-  `detect.test.ts` (also uncommitted, predates this session).
-- **Golden-corpus entry 09** added — a full real Hindi fable, exact bidirectional match.
+- **Smart Detection — legacy Kruti Dev branch** in `detect.ts` / `detect.test.ts`.
+- **Golden-corpus entry 09** — a full real Hindi fable, exact bidirectional match.
 - **Converter re-research** — no better-licensed source; see the Known-risks note above.
-- `CLAUDE.md` added at the repo parent (`/home/ayush-raj/The_Base/Eduveera/`).
+- **Docs reorg** — all engineering docs moved into `docs/`; `CLAUDE.md` moved into
+  the repo root. `README.md` links + structure tree updated.
+- **Production CSP fix** — was a static `script-src 'self'` that broke hydration on
+  Vercel; now a per-request nonce built in `src/middleware.ts` (SECURITY.md § 11).
+- **Image compressor** — `findCompressionTarget` now maximises quality (binary-search
+  for the highest jpeg quality under target, full resolution kept until quality 0.4
+  overshoots); result card shows before/after thumbnails.
+- **Passport photo** — result card shows original next to the cropped output.
+- **`/profile` page** — "recent transactions" + "recent tool activity" tables moved
+  here off the dashboard; added to nav + middleware protected prefixes.
 
-`npm run typecheck && npm run lint && npm test && npm run build` all green (42 tests).
-Nothing is committed or pushed — branch `master`, even with `origin/master`.
+`npm run typecheck && npm run lint && npm test && npm run build` all green (44 tests).
 
 ## Where to look
 
