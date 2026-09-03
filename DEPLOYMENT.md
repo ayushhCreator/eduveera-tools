@@ -2,6 +2,62 @@
 
 Low-cost stack per the brief's budget: GitHub → Vercel → Supabase. No additional infrastructure.
 
+## Demo deployment runbook (2026-09-03)
+
+The rest of this doc describes a full dev/staging/prod setup. For the **demo**
+deployment the setup is simpler: **one** hosted Supabase project, no separate
+staging, M4/M5 placeholders accepted, email confirmation off (see
+[STATUS.md](STATUS.md) § "What's left").
+
+**Current state:** Supabase project `gkwzckpajngcdhoivouy` — all 5 migrations
+pushed, `mailer_autoconfirm` on, seed users `admin@eduveera.test` /
+`demo@eduveera.test`. Repo: `github.com/ayushhCreator/eduveera-tools`.
+
+1. **Land the code on `master`:**
+   ```bash
+   git checkout master
+   git merge --ff-only feat/demo-prep-nav-responsive
+   git push origin master
+   ```
+   (or push the branch and open a PR first if you want a Vercel preview to QA.)
+
+2. **Import into Vercel** (first time): vercel.com → Add New → Project → import
+   `ayushhCreator/eduveera-tools`. Framework preset **Next.js** (auto), root
+   directory `./`, build/output settings default.
+
+3. **Vercel → Settings → Environment Variables** — add all three for the
+   **Production** and **Preview** scopes. Values are in your local `.env.local`:
+
+   | Variable | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://gkwzckpajngcdhoivouy.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the `sb_publishable_…` key from `.env.local` |
+   | `SUPABASE_SERVICE_ROLE_KEY` | the secret key from `.env.local` — **never** prefix `NEXT_PUBLIC_` |
+
+4. **Deploy.** Vercel builds from `master`. Note the URL (e.g.
+   `https://eduveera-tools.vercel.app`). The CSP in `next.config.ts` derives
+   `connect-src` from `NEXT_PUBLIC_SUPABASE_URL` at build time, so the deployed
+   CSP allows the Supabase host automatically — no code change.
+
+5. **Point Supabase Auth at the live URL** — dashboard → Authentication → URL
+   Configuration → set **Site URL** to the Vercel URL and add
+   `https://<vercel-url>/**` to Redirect URLs. (Or one Management API PATCH with
+   a fresh token: `{"site_url":"https://…","uri_allow_list":"https://…/**"}`.)
+
+6. **Smoke test the live URL:**
+   - `/signup` a new account → lands straight on `/dashboard` (no email step)
+   - log in `admin@eduveera.test` / `dsoti8yaLj3A9!` → `/admin` loads
+   - Hindi converter → converts, credit debits (admin has a balance)
+   - image compressor + passport photo → each produces a download
+   - phone viewport: nav menu toggles, no sideways scroll
+
+7. **Ongoing:** merge to `master` → Vercel auto-deploys. Schema changes:
+   `npx supabase db push` (the CLI is already linked to the project) as a
+   deliberate step, not from CI.
+
+Before a **real** (paid) launch, do the full § Production Checklist below —
+real M4/M5 values, email confirmation + SMTP, backups, handover.
+
 ## Environments
 
 | Environment | Purpose | Vercel | Supabase |
