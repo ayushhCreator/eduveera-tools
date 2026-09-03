@@ -25,7 +25,8 @@ NN-description.unicode.txt   # expected Unicode output
 | 06 | `06-numbers` | Devanagari numerals + Latin digits inside Hindi text | Same as above. |
 | 07 | `07-mixed-hindi-english` | Code-switched Hindi/English | Same as above — **one-directional only, see Known Limitations**. |
 | 08 | `08-rare-conjuncts-sil-sourced` | 5 rare conjunct bytes (द्भ, ख्र, र्, ठ्ठ, स्त्र) found missing from the TGNYC port during a systematic cross-check against SIL's map | **Independently sourced**: taken directly from SIL International's KrutiDev011.map explicit stack-expansion table, added as a bug-fix regression case (AI_RULES.md rule 12) — **`kruti_to_unicode` only, see Known Limitations**. |
-| 09 | *(not added)* | Real deed samples | **Not obtained** — see Known Limitations. |
+| 09 | `09-real-fable-do-ghade` | Real published prose — full multi-paragraph fable ("दो घड़े"). Nukta letters (घड़ा/बाढ़/टुकड़े), chandrabindu (ताँबे), conjuncts (मिट्टी/बलिष्ठ), danda, code punctuation | **User-provided real text**: a Hindi fable that appears in Hindi-language readers, not authored for this project. Stored as the converter's stable bidirectional fixpoint (nukta normalised to precomposed U+095C, matching entry 01). Both directions exact-match tested. Not a deed (M2 still open) but longer, real, connected prose. |
+| — | *(not added)* | Real **deed** sample | **Not obtained** — see Known Limitations. |
 
 ## Known limitations (documented, not silently skipped)
 
