@@ -74,7 +74,7 @@ RLS enabled on every table, no exceptions, default-deny.
 
 - React/Next.js auto-escapes rendered text by default — no `dangerouslySetInnerHTML` anywhere near user-supplied content (pasted Hindi text, names, UTR strings, admin `reason` fields).
 - Converted Hindi text is rendered as plain text/`value` in a textarea or escaped `<pre>`/text node — never interpreted as HTML.
-- Content-Security-Policy header set at the Next.js/Vercel level restricting script sources to self.
+- Content-Security-Policy is built per-request in `src/middleware.ts` with a fresh nonce: `script-src 'self' 'nonce-<n>' 'strict-dynamic'` (plus `'unsafe-eval'` in dev only for React Refresh). The nonce is set on both the request header (so Next.js stamps it onto its own inline hydration scripts) and the response header. `style-src` keeps `'unsafe-inline'` — Tailwind/shadcn inject runtime styles and there is no user-controlled CSS path. `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, `connect-src` limited to self + the Supabase project URL. A static `script-src 'self'` was tried first and broke production hydration (App Router always emits inline scripts) — see the `fix: nonce-based CSP` commit.
 
 ## 12. CSRF
 
