@@ -1,6 +1,6 @@
 # Eduveera Tools — Product Requirements Document
 
-Source of truth: `docs/Eduveera_Developer_Final_MVP_Brief_v2.pdf` ("the brief"). Every requirement below is either taken directly from the brief or explicitly marked **[Technical Recommendation]** where the brief is silent on implementation detail. Nothing else is in scope.
+Source of truth: `Eduveera_Developer_Final_MVP_Brief_v2.pdf` ("the brief"). Every requirement below is either taken directly from the brief or explicitly marked **[Technical Recommendation]** where the brief is silent on implementation detail. Nothing else is in scope.
 
 ## 1. Product Overview
 

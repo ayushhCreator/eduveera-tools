@@ -4,7 +4,7 @@ Binding rules for any AI agent (or human) implementing this codebase. When a rul
 
 ## Scope discipline
 
-1. **Never invent requirements.** If it's not in `docs/Eduveera_Developer_Final_MVP_Brief_v2.pdf` or [PRD.md](PRD.md), it's not a requirement. Reasonable technical implementation choices are fine and expected — label them as such (see the `[Technical Recommendation]` convention used throughout these docs) — but don't add product behavior the brief never asked for.
+1. **Never invent requirements.** If it's not in `Eduveera_Developer_Final_MVP_Brief_v2.pdf` or [PRD.md](PRD.md), it's not a requirement. Reasonable technical implementation choices are fine and expected — label them as such (see the `[Technical Recommendation]` convention used throughout these docs) — but don't add product behavior the brief never asked for.
 2. **Follow the PRD.** [PRD.md](PRD.md) is the product source of truth derived from the brief. Implementation must match it. If the PRD is ambiguous or silent on something needed to proceed, ask rather than guess.
 3. **Do not add out-of-scope features.** The brief explicitly excludes: native Android/iOS apps, an advanced PDF editor, AI face detection, AI background removal, large-scale analytics/reporting, a referral/affiliate system, complex subscription/billing management, and any tool/feature not listed in the brief without prior approval. Do not build these even if they seem like natural extensions.
 4. **Do not rewrite working code unnecessarily.** Small, targeted changes over speculative refactors. If something works and isn't part of the current task, leave it.
