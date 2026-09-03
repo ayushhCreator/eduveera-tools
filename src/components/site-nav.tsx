@@ -10,6 +10,7 @@ const LINKS: NavLink[] = [
   { href: "/tools/passport-photo", label: "Passport photo" },
   { href: "/tools/hindi-converter", label: "Hindi converter" },
   { href: "/dashboard/buy-credits", label: "Buy credits" },
+  { href: "/profile", label: "Profile" },
 ];
 
 /** Global nav. Renders nothing when signed out, so /login and /signup stay bare. */

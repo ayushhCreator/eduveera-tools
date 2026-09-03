@@ -191,14 +191,36 @@ export default function PassportPhotoPage() {
             </>
           )}
 
-          {resultUrl && (
+          {resultUrl && imageSrc && (
             <Card>
               <CardHeader>
                 <CardTitle>Result / परिणाम</CardTitle>
+                <CardDescription>Before and after / पहले और बाद में</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resultUrl} alt="Cropped passport photo" className="mx-auto rounded-md border" />
+                <div className="grid grid-cols-2 gap-4">
+                  <figure className="space-y-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageSrc}
+                      alt="Original photo"
+                      className="aspect-square w-full rounded-md border bg-muted object-contain"
+                    />
+                    <figcaption className="text-center text-xs text-muted-foreground">Before / पहले</figcaption>
+                  </figure>
+                  <figure className="space-y-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={resultUrl}
+                      alt="Cropped passport photo"
+                      className="w-full rounded-md border"
+                      style={{ aspectRatio: PASSPORT_PHOTO_ASPECT }}
+                    />
+                    <figcaption className="text-center text-xs text-muted-foreground">
+                      After / बाद में — passport size
+                    </figcaption>
+                  </figure>
+                </div>
                 <a href={resultUrl} download="passport-photo.jpg">
                   <Button className="w-full">Download JPG / डाउनलोड करें</Button>
                 </a>
